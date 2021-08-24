@@ -67,28 +67,29 @@ class RadixTreeNode<T> {
      *          is the prefix of their absolute path or null if it is not found.
      */
     RadixTreeNode<T> findPrefix(String stringToFind) {
-        
-        if( stringToFind.length()<=key.length() && key.startsWith(stringToFind) ) {
-            // found
-            return this;
+
+        if ( ! stringToFind.startsWith(this.key.substring(0, Math.min(stringToFind.length(), this.key.length())) )) {
+            return null;    // no match
         }
-        
-        if(stringToFind.startsWith(key)) {
-            String suffixToFindInChildren = stringToFind.substring(key.length());
-            // All elements of children are always of the generic type T
-            //noinspection unchecked
-            for(RadixTreeNode<T> aChild : children) {
-                RadixTreeNode<T> result = aChild.findPrefix(suffixToFindInChildren);
-                if(result!=null) {
-                    return result;
-                }
+
+        if( stringToFind.length()<=key.length() ) {
+            return this;    // found
+        }
+
+        // otherwise: search among children
+        String suffixToFindInChildren = stringToFind.substring(this.key.length());
+        RadixTreeNode<T> result = null;
+
+        // aChild has generic type T (because all children of this node (generic of type T) have the same generic type)
+        //noinspection unchecked
+        for(RadixTreeNode<T> aChild : children) {
+            result = aChild.findPrefix(suffixToFindInChildren);
+            if(result!=null) {
+                break;
             }
         }
-        
-        // If here: the key of this node does not start with the input string or
-        // all children were explored
-        return null;
-        
+        return result;
+
     }
         
     /**
