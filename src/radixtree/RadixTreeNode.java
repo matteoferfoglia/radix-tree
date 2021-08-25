@@ -103,29 +103,23 @@ class RadixTreeNode<T> {
         // First step: find the parent of the new node to insert
 
         RadixTreeNode<T> parent = this,
-                         oldParent;
+                         oldParent = this;
 
-        int i = parent.key.length();
-        do {
+
+        for(int i=1; i<=stringToInsert.length(); i++ ) {
             oldParent = parent;
-            if (stringToInsert.length()>oldParent.key.length()) {
-                try {
-                    int startPosition = stringToInsert.indexOf(parent.key.substring(0, Math.min(Math.max(0, i - 1),parent.key.length()))); // max() because the length of the key of the root node is 0, min() because each node saves its relative key which may be shorter
-                    if( startPosition>0 ) {
-                        stringToInsert = stringToInsert.substring(startPosition);
-                    }
-                } catch (Exception e){
-                    break;
-                }
-                for(i=stringToInsert.length(); i>0; i-- ) {
-                    parent = oldParent.findPrefix(stringToInsert.substring(0,i));
-                    if(parent!=null) {
-                        break;
-                    }
-                }
+            parent = oldParent.findPrefix(stringToInsert.substring(0,i));
+            if(parent==null) {
+                break;
             }
-        } while ( oldParent != parent && parent!=null);
-        parent = oldParent; // parent found
+            if(parent!=oldParent) {
+                stringToInsert = stringToInsert.substring(oldParent.key.length());
+                i-=oldParent.key.length();  // part of the string was cut off
+            }
+        }
+        if(parent==null) {
+            parent = oldParent; // parent found
+        }
 
         // Second step: insert the new node
 
