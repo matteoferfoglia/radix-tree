@@ -16,7 +16,13 @@ public class RadixTree<T> {
     
     /** Constructor. */
     public RadixTree() {
-        this.root = new RadixTreeNode<>();
+        this(new RadixTreeNode<>());
+    }
+
+    /** Constructor.
+     * @param root The root node.*/
+    public RadixTree(RadixTreeNode<T> root) {
+        this.root = root;
     }
     
     /**
@@ -33,6 +39,21 @@ public class RadixTree<T> {
             return null;
         }
         
+    }
+
+    /**
+     * @param prefixToFind The prefix to find.
+     * @return the subtree corresponding to the given prefix or null if it is not found
+     */
+    public RadixTree<T> getByPrefix(@NotNull String prefixToFind) {
+
+        RadixTreeNode<T> found = root.findPrefix(Objects.requireNonNull(prefixToFind, "The given string cannot be null."));
+        if( found!=null ) {
+            return new RadixTree<>(found);
+        } else {
+            return null;
+        }
+
     }
 
     /**

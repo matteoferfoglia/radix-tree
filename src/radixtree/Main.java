@@ -1,10 +1,7 @@
 package radixtree;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Main class.
@@ -106,6 +103,57 @@ public class Main {
         stop = System.nanoTime();
         System.out.println("SEARCH in RadixTree: " + (stop-start)/1000.0 + " us, " + keys.size() + " elements with duplicates, " + hashTable.size() + " distinct values");
 
+
+        // Search by prefix
+
+        String prefixToFind = "abc";
+
+        start = System.nanoTime();
+        Hashtable<String, String> hashtablePrefix = new Hashtable<>();
+        String data;
+        for(String aKey : hashTable.keySet()) {
+            if((data = hashTable.get(aKey)).startsWith(prefixToFind)) {
+                hashtablePrefix.put(aKey, data);
+            }
+        }
+        stop = System.nanoTime();
+        System.out.println("SEARCH in HashTable by prefix: " + (stop-start)/1000.0 + " us, " +
+                hashtablePrefix.entrySet().stream().sorted(Map.Entry.comparingByKey()).collect(Collectors.toList()) +   // needs sorting, too
+                "\n\t" + hashtablePrefix.size() + " elements");
+
+        start = System.nanoTime();
+        RadixTree<String> radixTreePrefix = radixTree.getByPrefix(prefixToFind);
+        stop = System.nanoTime();
+        System.out.println("SEARCH in RadixTree by prefix: " + (stop-start)/1000.0 + " us, " + radixTreePrefix.allEntries() +
+                "\n\t" + radixTreePrefix.allEntries().size() + " elements");
+
     }
     
 }
+
+
+/* OUTPUT:
+
+    abba_
+    abc_
+    abe_
+    ab_
+    null
+    null
+    X9eqJ
+    X9iYE
+    [X9eqJ, X9iYE, a, ab, abba, abc, abd, abe, abla, b, c]
+    {X9eqJ=X9eqJ_, X9iYE=X9iYE_, a=a_, ab=ab_, abba=abba_, abc=abc_, abd=abd_, abe=abe_, abla=abla_, b=b_, c=c2}
+    INSERTION in HashTable: 518295.7 us, 2000000 elements, 2000000 distinct values
+    INSERTION in RadixTree: 5227935.8 us, 2000000 elements, 2000000 distinct values
+    SEARCH in HashTable: 150490.7 us, 2000000 elements with duplicates, 2000000 distinct values
+    SEARCH in RadixTree: 4778426.8 us, 2000000 elements with duplicates, 2000000 distinct values
+    SEARCH in HashTable by prefix: 336540.9 us, [abc5892wOg=abc5892wOg_, abc6R7Jatf=abc6R7Jatf_, abcL3tcG66=abcL3tcG66_, abcOAttnrD=abcOAttnrD_, abcOQM2WdG=abcOQM2WdG_, abccU5MmFe=abccU5MmFe_, abcgN5wFvg=abcgN5wFvg_, abchAaKAAF=abchAaKAAF_, abclGGxkKB=abclGGxkKB_]
+        9 elements
+    SEARCH in RadixTree by prefix: 16.9 us, {c5892wOg=abc5892wOg_, c6R7Jatf=abc6R7Jatf_, cL3tcG66=abcL3tcG66_, cOAttnrD=abcOAttnrD_, cOQM2WdG=abcOQM2WdG_, ccU5MmFe=abccU5MmFe_, cgN5wFvg=abcgN5wFvg_, chAaKAAF=abchAaKAAF_, clGGxkKB=abclGGxkKB_}
+        9 elements
+
+    Process finished with exit code 0
+
+
+ */
