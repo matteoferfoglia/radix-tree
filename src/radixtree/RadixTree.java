@@ -67,7 +67,9 @@ public class RadixTree<T> {
         if(Objects.requireNonNull(stringToInsert, "The given string cannot be null").length()==0) {
             throw new IllegalArgumentException("The given string cannot be null");
         }
-        return root.insert(stringToInsert, Objects.requireNonNull(data, "The data cannot be null"));
+
+        return root.insert( stringToInsert,
+                            Objects.requireNonNull(data, "The data cannot be null") );
     }
     
 }

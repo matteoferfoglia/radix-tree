@@ -21,7 +21,7 @@ public class Main {
         t.insert("X9eqJ", "X9eqJ_");
 
         t.insert("c", "c_");
-        t.insert("c", "c_");
+        t.insert("c", "c2");
         t.insert("a", "a_");
         t.insert("b", "b_");
         t.insert("abba", "abba_");
@@ -52,7 +52,7 @@ public class Main {
         // Generates keys and values (duplicates might be present)
         List<String> keys = new ArrayList<>();
         List<String> values = new ArrayList<>();
-        int N = 32783;  // number of string to generate
+        int N = 986;  // number of string to generate
         int length = 5;
         String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         Random rnd = new Random();
@@ -107,6 +107,7 @@ public class Main {
         System.out.println("SEARCH in RadixTree: " + (stop-start)/1000.0 + " us, " + keys.size() + " elements with duplicates, " + hashTable.size() + " distinct values");
 
         // radixTree.insert("0Nt2v", "0Nt2v_");    // i=1328
+        radixTree.insert("nn008", "nn008_");    // i=987
         radixTree.insert("OOGqa", "OOGqa_");    // i=32783
 
 

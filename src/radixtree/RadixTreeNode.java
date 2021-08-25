@@ -100,85 +100,92 @@ class RadixTreeNode<T> {
      */
     T insert(@NotNull String stringToInsert, @NotNull T data) {
 
-        // TODO : improve efficiency of this method
+        // First step: find the parent of the new node to insert
 
-        RadixTreeNode<T> parent,
-                         oldParent,
-                         newNode;
+        RadixTreeNode<T> parent = this,
+                         oldParent;
 
-        if( Objects.requireNonNull(stringToInsert, "The string cannot be null").isEmpty() ) {
-            throw new IllegalArgumentException("The string cannot be empty.");
-        }
-
-        int i=1,
-            counterParentKey=0;
-        String oldSubstringKeyOfParent = this.key,
-               substringKeyOfParent = "";
-
-        for( oldParent=this;
-             i<stringToInsert.length() &&
-             (parent=oldParent.findPrefix(stringToInsert.substring(0,i)))!=null;
-             oldParent=parent ) {
-            if(parent!=oldParent) {
-                counterParentKey = 0;
-                substringKeyOfParent = oldSubstringKeyOfParent;
+        int i = parent.key.length();
+        do {
+            oldParent = parent;
+            if (stringToInsert.length()>oldParent.key.length()) {
+                try {
+                    int startPosition = stringToInsert.indexOf(parent.key.substring(0, Math.min(Math.max(0, i - 1),parent.key.length()))); // max() because the length of the key of the root node is 0, min() because each node saves its relative key which may be shorter
+                    if( startPosition>0 ) {
+                        stringToInsert = stringToInsert.substring(startPosition);
+                    }
+                } catch (Exception e){
+                    break;
+                }
+                for(i=stringToInsert.length(); i>0; i-- ) {
+                    parent = oldParent.findPrefix(stringToInsert.substring(0,i));
+                    if(parent!=null) {
+                        break;
+                    }
+                }
             }
-            i++;
-            oldSubstringKeyOfParent += parent.key.charAt(counterParentKey++);
-        }
-        parent = oldParent; // this node will be the parent of the new node to insert
-        newNode = new RadixTreeNode<>(stringToInsert.substring(substringKeyOfParent.length()), data);
+        } while ( oldParent != parent && parent!=null);
+        parent = oldParent; // parent found
 
-        if( newNode.key.equals(parent.key) ) {
+        // Second step: insert the new node
+
+        // The new node can have a common root with the parent
+        int minLength = Math.min(parent.key.length(), stringToInsert.length()),
+            commonRootLength;
+
+        // for-loop used to find the length of the common root
+        //noinspection StatementWithEmptyBody
+        for( commonRootLength=0;
+             commonRootLength<minLength && parent.key.charAt(commonRootLength)==stringToInsert.charAt(commonRootLength);
+             commonRootLength++) {} // now commonRootLength is the length of the common root
+
+        RadixTreeNode<T> newNode = new RadixTreeNode<>(stringToInsert.substring(commonRootLength), data);
+
+        if( stringToInsert.equals(parent.key) ) {
             // Same key: the new node will replace the parent, but children are kept
+            newNode.key = stringToInsert;
             newNode.children = parent.children;
             return parent.replace(newNode).data.orElse(null);
         }
 
-        // Check if the parent and the new node have a common root
-        boolean isNewNodeKeyShorter = newNode.key.length() < parent.key.length();
-        int j=0,
-            minLength = isNewNodeKeyShorter ? newNode.key.length() : parent.key.length();
-        while (j<minLength && parent.key.charAt(j)==newNode.key.charAt(j)) {
-            j++;
-        }
-        if(j>0) {   // first j characters are the common root
-            if(j==minLength) {
-                if( isNewNodeKeyShorter) {   // the new node is the common root
-                    parent.key = parent.key.substring(j);
-                    parent.children = new RadixTreeNode[] { parent.replace(newNode) };  // the new node becomes the parent
-                    return null;
-                }   // otherwise the new node will be added as a child
+        if( commonRootLength>0 && commonRootLength<minLength) {
+            // a new node with the common root must be inserted: the parent and the new node will be children of this node
+            RadixTreeNode<T> commonRootNode = new RadixTreeNode<>(parent.key.substring(0,commonRootLength));
+            parent.key = parent.key.substring(commonRootLength);
+            RadixTreeNode<T> parentBeforeInsertion = parent.replace(commonRootNode);    // now, parent is the common root
+            if(parentBeforeInsertion.key.compareTo(newNode.key)<0) {
+                parent.children = new RadixTreeNode[] {parentBeforeInsertion, newNode};
             } else {
-                RadixTreeNode<T> commonRootNode = new RadixTreeNode<>(parent.key.substring(0,j)); // key of common root has characters from 0 to j-1 of children
-                newNode.key = newNode.key.substring(j);
-                parent.key = parent.key.substring(j);
-                RadixTreeNode<T> oldNode = parent.replace(commonRootNode);
-                if(oldNode.key.compareTo(newNode.key)<0) {
-                    parent.children = new RadixTreeNode[] {oldNode, newNode};
-                } else {
-                    parent.children = new RadixTreeNode[] {newNode, oldNode};
-                }
-                return null;
+                parent.children = new RadixTreeNode[] {newNode, parentBeforeInsertion};
             }
+            return null;    // successful insertion
         }
 
-        // The new node must be inserted as child of the parent, at the correct position
-        newNode.key = newNode.key.substring(j);    // remove the common root of the parent from the key
+        if(commonRootLength==stringToInsert.length()) {
+            // the new node will replace the parent
+            parent.key = parent.key.substring(commonRootLength);
+            parent.children = new RadixTreeNode[] { parent.replace(newNode) };  // the new node becomes the parent
+            return null;    // successful insertion
+        }
+
+
+        // If here, the new node must be inserted as child of the parent, at the correct position
 
         @SuppressWarnings("unchecked")  // all nodes and their children should have the same generic
         RadixTreeNode<T>[] newChildren = new RadixTreeNode[parent.children.length+1];
 
         int counter=0;
-        // all nodes and their children should have the same generic
+
+        // all nodes and their children have the same generic type
         //noinspection unchecked
-        for(RadixTreeNode<T> aChild : parent.children) {
+        for(RadixTreeNode<T> aChild : parent.children) {    // for-loop to find the correct position where to insert the new child
             if(aChild.key.compareTo(newNode.key)<0) {
-                newChildren[counter++] = aChild;
+                counter++;
             } else {
                 break;
             }
         }
+        System.arraycopy(parent.children, 0, newChildren, 0, counter);
         newChildren[counter] = newNode;
         System.arraycopy(parent.children, counter, newChildren, counter+1, parent.children.length-counter);
         parent.children = newChildren;
